@@ -16,6 +16,7 @@
 #include <fstream>
 #include <cmath>
 
+
 using namespace std;
 
 ofstream output_file;

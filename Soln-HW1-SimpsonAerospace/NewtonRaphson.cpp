@@ -9,8 +9,9 @@
 //The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //
 //THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#include "NewtonRaphson.h"
 #include "stdafx.h"
+#include "NewtonRaphson.h"
+
 ///Setup
 //typedef
 template <class Bs>
@@ -24,7 +25,7 @@ void newton_raphson<Bs>::set_function(std::function <VectorXp(VectorXp, VectorXp
 	fcn = *fun;
 }
 template <class Bs>
-void newton_raphson<Bs>::set_function(std::function <MatrixXp(VectorXp, VectorXp)> *der) {
+void newton_raphson<Bs>::set_deriv(std::function <MatrixXp(VectorXp, VectorXp)> *der) {
 	drv = *der;
 }
 template <class Bs>
@@ -46,30 +47,30 @@ void newton_raphson<Bs>::set_t(VectorXp time) {
 
 //access
 template <class Bs>
-MatrixXp newton_raphson<Bs>::get_res() {
+Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::get_res() {
 	return res;
 }
 template <class Bs>
-MatrixXp newton_raphson<Bs>::get_x() {
+Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::get_x() {
 	return x_new;
 }
 template <class Bs>
-VectorXp newton_raphson<Bs>::get_x0() {
+Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::get_x0() {
 	return x;
 }
 template <class Bs>
-VectorXp newton_raphson<Bs>::get_rms() {
+Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::get_rms() {
 	return rms;
 }
 
 //f(x)
 template <class Bs>
-VectorXp newton_raphson<Bs>::func(VectorXp x, VectorXp t) {
+Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::func(VectorXp x, VectorXp t) {
 	return fcn(x, t);
 }
 //f'(x)
 template<class Bs>
-MatrixXp newton_raphson<Bs>::deriv(VectorXp x, VectorXp t) {
+Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::deriv(VectorXp x, VectorXp t) {
 	return drv(x, t);
 }
 
