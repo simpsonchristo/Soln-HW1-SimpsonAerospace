@@ -71,7 +71,7 @@ class newton_raphson {
 		//max error allowed
 		Bs err;
 		//next iteration
-		MatrixXp xnew;
+		MatrixXp x_new;
 		//residuals
 		MatrixXp res;
 		//number of steps for calculating
@@ -83,9 +83,105 @@ class newton_raphson {
 		MatrixXp store_res;
 		VectorXp store_rms;
 
-
-
+		VectorXp test;
+		MatrixXp holder;
 
 };
+
+///Setup
+//typedef
+template <class Bs>
+using VectorXp = typename newton_raphson<Bs>::VectorXp;
+template <class Bs>
+using MatrixXp = typename newton_raphson<Bs>::MatrixXp;
+
+//set
+template <class Bs>
+void newton_raphson<Bs>::set_function(std::function <VectorXp(VectorXp, VectorXp)> *fun) {
+	fcn = *fun;
+}
+template <class Bs>
+void newton_raphson<Bs>::set_deriv(std::function <MatrixXp(VectorXp, VectorXp)> *der) {
+	drv = *der;
+}
+template <class Bs>
+void newton_raphson<Bs>::set_x0(VectorXp state_vector) {
+	x = state_vector;
+}
+template <class Bs>
+void newton_raphson<Bs>::set_max_error(Bs max_error_allowed) {
+	err = max_error_allowed;
+}
+template <class Bs>
+void newton_raphson<Bs>::set_num_steps(int num_steps) {
+	steps = num_steps;
+}
+template<class Bs>
+void newton_raphson<Bs>::set_t(VectorXp time) {
+	t = time;
+}
+
+
+//access
+template <class Bs>
+Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::get_res() {
+	return res;
+}
+template <class Bs>
+Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::get_x() {
+	return newton_raphson::x_new;
+}
+template <class Bs>
+Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::get_x0() {
+	return x;
+}
+template <class Bs>
+Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::get_rms() {
+	return rms;
+}
+
+//f(x)
+template <class Bs>
+Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::func(VectorXp x, VectorXp t) {
+	return fcn(x, t);
+}
+//f'(x)
+template<class Bs>
+Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::deriv(VectorXp x, VectorXp t) {
+	return drv(x, t);
+}
+
+//////////////////////////////////////////////////////////////
+///Calculations
+//Eigen::VectorXd::Index min_index;
+
+//TODO: Make the while loop do something 
+template <class Bs>
+void newton_raphson<Bs>::iterate() {
+	//determine if error conditions have been met
+	//while (err > rms.minCoeff())
+	//{
+	x_new.conservativeResize(x.rows(), int(steps));
+	res.conservativeResize(x.rows(), int(steps));
+	rms.conservativeResize(int(steps));
+		//iterate for steps
+		for (int i = 0; i < steps; i++)
+		{
+			//calculate next iteration
+			x_new.col(i) = x - (deriv(x, t).inverse() * func(x, t));
+			//calculate residuals
+			res.col(i) = x_new.col(i) - x;
+			//calculate rms
+			rms(i) = res.col(i).norm();
+			//set x to xnew
+			x = x_new.col(i);
+		}
+	//	index = rms.minCoeff(&min_index);
+	//	if (err > rms.minCoeff()) {
+	//		x = x_new.col(index);
+	//	}
+	//}
+}
+
 
 #endif /*NEWTONRAPHSON_H*/

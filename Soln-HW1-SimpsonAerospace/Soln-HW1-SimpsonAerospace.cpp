@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <Eigen/Dense>
 
 
 using namespace std;
@@ -26,45 +27,47 @@ std::string residuals_file = "res.csv";
 //kinematics
 Eigen::VectorXd state_vector_at(double t, /*given*/ Eigen::VectorXd x0) {
 	Eigen::VectorXd state_vector(5);
-	state_vector[0] /*x*/     = x0[0] + x0[2] * t;
-	state_vector[1] /*y*/     = x0[1] + x0[3] * t - x0[4] * 0.5*pow(t, 2);
-	state_vector[2] /*x_dot*/ = x0[2];
-	state_vector[3] /*y_dot*/ = x0[3] - x0[4] * t;
-	state_vector[4] /*g*/     = x0[4];
+	state_vector(0) /*x*/     = x0(0) + x0(2) * t;
+	state_vector(1) /*y*/     = x0(1) + x0(3) * t - x0(4) * 0.5*pow(t, 2);
+	state_vector(2) /*x_dot*/ = x0(2);
+	state_vector(3) /*y_dot*/ = x0(3) - x0(4) * t;
+	state_vector(4) /*g*/     = x0(4);
 	return state_vector;
 }
 //range
 double range_eqn(Eigen::VectorXd x0, double t) {
 	Eigen::VectorXd x = state_vector_at(t, x0);
-	double rho = sqrt(pow(x[0] - 1.0, 2) + pow(x[1] - 1.0, 2));
+	double rho = sqrt(pow(x(0) - 1.0, 2) + pow(x(1) - 1.0, 2));
 	return rho;
 }
 //f(x)
 Eigen::VectorXd residuals_of_x2rho(Eigen::VectorXd x0, Eigen::VectorXd t) {
 	Eigen::VectorXd truth_observations(5);
-	truth_observations << 7.0, 
+	truth_observations << 7.0,
 		8.00390597,
 		8.94427191,
 		9.801147892,
 		10.630145813;
-	
+
 	Eigen::VectorXd rho(5);
-	for (float i = 0; i < rho.rows(); i++)
+	for (int i = 0; i < rho.rows(); i++)
 	{
-		rho[i] = range_eqn(x0, t[i]);
+		rho(i) = range_eqn(x0, t(i));
 	}
+
 	return truth_observations - rho;
 }
 //f'(x)
 Eigen::MatrixXd deriv_of_x2rho(Eigen::VectorXd x0, Eigen::VectorXd t) {
 	Eigen::MatrixXd x_of_t(5,5);
-	x_of_t << state_vector_at(t(0), x0),
-		state_vector_at(t(1), x0),
-		state_vector_at(t(2), x0),
-		state_vector_at(t(3), x0),
-		state_vector_at(t(4), x0);
+		x_of_t.col(0) = state_vector_at(t(0), x0);
+		x_of_t.col(1) = state_vector_at(t(1), x0);
+		x_of_t.col(2) = state_vector_at(t(2), x0);
+		x_of_t.col(3) = state_vector_at(t(3), x0);
+		x_of_t.col(4) = state_vector_at(t(4), x0);
+		
 
-	for (float j = 0; j < x_of_t.cols(); j++)
+	for (int j = 0; j < x_of_t.cols(); j++)
 	{
 		x_of_t(0, j) = (x_of_t(0, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(0, j) - 1.0, 2));
 		x_of_t(1, j) = (x_of_t(1, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(0, j) - 1.0, 2));
@@ -103,15 +106,15 @@ int main()
 	od.set_num_steps(10);
 	od.set_t(t);
 	od.set_x0(x0);
-	//calculate
+	////calculate
 	od.iterate();
-	//get results
+	////get results
 	Eigen::MatrixXd residuals = od.get_res();
 	Eigen::MatrixXd all_x = od.get_x();
 	Eigen::VectorXd x0_final = od.get_x0();
 	Eigen::VectorXd all_rms = od.get_rms();
 
-	cout << x0_final << std::endl;
+	cout << all_x << std::endl;
 	double j;
 	cin >> j;
 
