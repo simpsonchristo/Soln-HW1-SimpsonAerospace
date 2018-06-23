@@ -169,6 +169,16 @@ void newton_raphson<Bs>::iterate() {
 		{
 			//calculate next iteration
 			x_new.col(i) = x - (deriv(x, t).inverse() * func(x, t));
+			//check each iteration
+			cout << "New iteration " << endl;
+			cout << x_new.col(i);
+			cout << endl << "derivative" << endl;
+			cout << deriv(x, t);
+			cout << endl << "Inverse of derivative" << endl;
+			cout << deriv(x, t).inverse();
+			cout << endl << "Range Residuals" << endl;
+			cout << func(x, t);
+
 			//calculate residuals
 			res.col(i) = x_new.col(i) - x;
 			//calculate rms

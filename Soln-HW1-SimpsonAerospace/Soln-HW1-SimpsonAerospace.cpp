@@ -69,11 +69,17 @@ Eigen::MatrixXd deriv_of_x2rho(Eigen::VectorXd x0, Eigen::VectorXd t) {
 
 	for (int j = 0; j < x_of_t.cols(); j++)
 	{
-		x_of_t(0, j) = (x_of_t(0, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(0, j) - 1.0, 2));
-		x_of_t(1, j) = (x_of_t(1, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(0, j) - 1.0, 2));
-		x_of_t(2, j) = (t(j)*(x_of_t(0, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(0, j) - 1.0, 2));
-		x_of_t(3, j) = (t(j)*(x_of_t(1, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(0, j) - 1.0, 2));
-		x_of_t(4, j) = (-pow(t(j),2)*0.5*(x_of_t(0, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(0, j) - 1.0, 2));
+		
+		x_of_t(0, j) = (x_of_t(0, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+		//problem must be in calculated range
+		x_of_t(1, j) = (x_of_t(1, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+	
+		x_of_t(2, j) = (t(j)*(x_of_t(0, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+
+		x_of_t(3, j) = (t(j)*(x_of_t(1, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+
+		x_of_t(4, j) = (-pow(t(j),2)*0.5*(x_of_t(1, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+
 	}
 	
 	return x_of_t;
@@ -114,7 +120,7 @@ int main()
 	Eigen::VectorXd x0_final = od.get_x0();
 	Eigen::VectorXd all_rms = od.get_rms();
 
-	cout << all_x << std::endl;
+	cout << residuals << std::endl;
 	double j;
 	cin >> j;
 
