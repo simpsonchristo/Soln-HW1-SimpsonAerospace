@@ -159,8 +159,6 @@ Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::deriv(Vect
 template <class Bs>
 void newton_raphson<Bs>::iterate() {
 	//determine if error conditions have been met
-	//while (err > rms.minCoeff())
-	//{
 	x_new.conservativeResize(x.rows(), int(steps));
 	res.conservativeResize(x.rows(), int(steps));
 	rms.conservativeResize(int(steps));
@@ -170,27 +168,27 @@ void newton_raphson<Bs>::iterate() {
 			//calculate next iteration
 			x_new.col(i) = x - (deriv(x, t).inverse() * func(x, t));
 			//check each iteration
-			cout << "New iteration " << endl;
-			cout << x_new.col(i);
-			cout << endl << "derivative" << endl;
-			cout << deriv(x, t);
-			cout << endl << "Inverse of derivative" << endl;
-			cout << deriv(x, t).inverse();
-			cout << endl << "Range Residuals" << endl;
-			cout << func(x, t);
+			//cout << endl << "New iteration " << endl;
+			//cout << x_new.col(i);
+			//cout << endl << "derivative" << endl;
+			//cout << deriv(x, t);
+			//cout << endl << "Inverse of derivative" << endl;
+			//cout << deriv(x, t).inverse();
+
 
 			//calculate residuals
 			res.col(i) = x_new.col(i) - x;
 			//calculate rms
 			rms(i) = res.col(i).norm();
+			//cout << endl << "RMS" << endl;
+			//cout << rms(i);
 			//set x to xnew
 			x = x_new.col(i);
+			if (err > rms(i)) {
+				x = x_new.col(i);
+				break;
+			}
 		}
-	//	index = rms.minCoeff(&min_index);
-	//	if (err > rms.minCoeff()) {
-	//		x = x_new.col(index);
-	//	}
-	//}
 }
 
 

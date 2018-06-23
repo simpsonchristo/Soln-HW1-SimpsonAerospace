@@ -60,6 +60,7 @@ Eigen::VectorXd residuals_of_x2rho(Eigen::VectorXd x0, Eigen::VectorXd t) {
 //f'(x)
 Eigen::MatrixXd deriv_of_x2rho(Eigen::VectorXd x0, Eigen::VectorXd t) {
 	Eigen::MatrixXd x_of_t(5,5);
+	double rho;
 		x_of_t.col(0) = state_vector_at(t(0), x0);
 		x_of_t.col(1) = state_vector_at(t(1), x0);
 		x_of_t.col(2) = state_vector_at(t(2), x0);
@@ -69,17 +70,17 @@ Eigen::MatrixXd deriv_of_x2rho(Eigen::VectorXd x0, Eigen::VectorXd t) {
 
 	for (int j = 0; j < x_of_t.cols(); j++)
 	{
-		
-		x_of_t(0, j) = (x_of_t(0, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
-		//problem must be in calculated range
-		x_of_t(1, j) = (x_of_t(1, j) - 1.0) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
-	
-		x_of_t(2, j) = (t(j)*(x_of_t(0, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+		rho = sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
 
-		x_of_t(3, j) = (t(j)*(x_of_t(1, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+		x_of_t(2, j) = (t(j)*(x_of_t(0, j) - 1.0)) / rho;
 
-		x_of_t(4, j) = (-pow(t(j),2)*0.5*(x_of_t(1, j) - 1.0)) / sqrt(pow(x_of_t(0, j) - 1.0, 2) + pow(x_of_t(1, j) - 1.0, 2));
+		x_of_t(3, j) = (t(j)*(x_of_t(1, j) - 1.0)) / rho;
 
+		x_of_t(4, j) = (-pow(t(j), 2)*0.5*(x_of_t(1, j) - 1.0)) / rho;
+
+		x_of_t(0, j) = (x_of_t(0, j) - 1.0) / rho;
+
+		x_of_t(1, j) = (x_of_t(1, j) - 1.0) / rho;
 	}
 	
 	return x_of_t;
@@ -109,7 +110,7 @@ int main()
 	od.set_function(&primary_function);
 	od.set_deriv(&derivative_function);
 	od.set_max_error(1.0e-6);
-	od.set_num_steps(10);
+	od.set_num_steps(1.0e+6);
 	od.set_t(t);
 	od.set_x0(x0);
 	////calculate
