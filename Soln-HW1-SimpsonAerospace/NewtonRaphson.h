@@ -37,22 +37,27 @@ class newton_raphson {
 		typedef Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> MatrixXp;
 
 		//set functions
-		void set_function(std::function <VectorXp(VectorXp, VectorXp)> *fun);
-		std::function <VectorXp(VectorXp, VectorXp)> fcn;
-		void set_deriv(std::function <MatrixXp(VectorXp, VectorXp)> *der);
-		std::function <MatrixXp(VectorXp, VectorXp)> drv;
+		void set_function(std::function <VectorXp(VectorXp, VectorXp, VectorXp, VectorXp)> *fun);
+		std::function <VectorXp(VectorXp, VectorXp, VectorXp, VectorXp)> fcn;
+		void set_deriv(std::function <MatrixXp(VectorXp, VectorXp, VectorXp)> *der);
+		std::function <MatrixXp(VectorXp, VectorXp, VectorXp)> drv;
+		
 		//declare initial state
 		void set_x0(VectorXp state_vector);
 		void set_t(VectorXp time);
+		void set_actual_range(VectorXp actual_range);
+		//declare observer's state
+		void set_ground_station(VectorXp ground_station);
+
 		//declare max error allowed
 		void set_max_error(Bs max_error_allowed);
 		//declare number of steps to use
 		void set_num_steps(int num_steps);
 
 		//f(x)
-		VectorXp func(VectorXp x, VectorXp t);
+		VectorXp func(VectorXp x, VectorXp xs, VectorXp actual_rho, VectorXp t);
 		//f'(x)
-		MatrixXp deriv(VectorXp x, VectorXp t);
+		MatrixXp deriv(VectorXp x, VectorXp xs, VectorXp t);
 
 		//access
 		MatrixXp get_res();
@@ -68,6 +73,10 @@ class newton_raphson {
 		VectorXp x;
 		//time
 		VectorXp t;
+		//actual range
+		VectorXp actual_rho;
+		//ground station state vector
+		VectorXp xs;
 		//max error allowed
 		Bs err;
 		//next iteration
@@ -83,8 +92,8 @@ class newton_raphson {
 		MatrixXp store_res;
 		VectorXp store_rms;
 
-		VectorXp test;
-		MatrixXp holder;
+
+		MatrixXp state_transition_matrix;
 
 };
 
@@ -97,11 +106,11 @@ using MatrixXp = typename newton_raphson<Bs>::MatrixXp;
 
 //set
 template <class Bs>
-void newton_raphson<Bs>::set_function(std::function <VectorXp(VectorXp, VectorXp)> *fun) {
+void newton_raphson<Bs>::set_function(std::function <VectorXp(VectorXp, VectorXp, VectorXp, VectorXp)> *fun) {
 	fcn = *fun;
 }
 template <class Bs>
-void newton_raphson<Bs>::set_deriv(std::function <MatrixXp(VectorXp, VectorXp)> *der) {
+void newton_raphson<Bs>::set_deriv(std::function <MatrixXp(VectorXp, VectorXp, VectorXp)> *der) {
 	drv = *der;
 }
 template <class Bs>
@@ -119,6 +128,14 @@ void newton_raphson<Bs>::set_num_steps(int num_steps) {
 template<class Bs>
 void newton_raphson<Bs>::set_t(VectorXp time) {
 	t = time;
+}
+template<class Bs>
+void newton_raphson<Bs>::set_actual_range(VectorXp actual_range) {
+	actual_rho = actual_range;
+}
+template<class Bs>
+void newton_raphson<Bs>::set_ground_station(VectorXp ground_station) {
+	xs = ground_station;
 }
 
 
@@ -139,56 +156,57 @@ template <class Bs>
 Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::get_rms() {
 	return rms;
 }
-
 //f(x)
 template <class Bs>
-Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::func(VectorXp x, VectorXp t) {
-	return fcn(x, t);
+Eigen::Matrix<Bs, Eigen::Dynamic, 1> newton_raphson<Bs>::func(VectorXp x, VectorXp xs, VectorXp actual_rho, VectorXp t) {
+	return fcn(x, xs, actual_rho, t);
 }
 //f'(x)
 template<class Bs>
-Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::deriv(VectorXp x, VectorXp t) {
-	return drv(x, t);
+Eigen::Matrix<Bs, Eigen::Dynamic, Eigen::Dynamic> newton_raphson<Bs>::deriv(VectorXp x, VectorXp xs, VectorXp t) {
+	return drv(x, xs, t);
 }
 
 //////////////////////////////////////////////////////////////
 ///Calculations
-//Eigen::VectorXd::Index min_index;
 
-//TODO: Make the while loop do something 
 template <class Bs>
-void newton_raphson<Bs>::iterate() {
+void newton_raphson<Bs>::iterate() 
+{
 	//determine if error conditions have been met
-	x_new.conservativeResize(x.rows(), int(steps));
-	res.conservativeResize(x.rows(), int(steps));
-	rms.conservativeResize(int(steps));
-		//iterate for steps
-		for (int i = 0; i < steps; i++)
-		{
-			//calculate next iteration
-			x_new.col(i) = x - (deriv(x, t).inverse() * func(x, t));
-			//check each iteration
-			//cout << endl << "New iteration " << endl;
-			//cout << x_new.col(i);
-			//cout << endl << "derivative" << endl;
-			//cout << deriv(x, t);
-			//cout << endl << "Inverse of derivative" << endl;
-			//cout << deriv(x, t).inverse();
+	int i = 0;
+	x_new.conservativeResize(x.rows(), i+1);
+	res.conservativeResize(x.rows(), i+1);
+	rms.conservativeResize(i+1);
+	/*RUN TO GET INITIAL RMS VALUE*/
+	//calculate next iteration
+	state_transition_matrix = ((deriv(x, xs, t).transpose() * deriv(x, xs, t)).inverse()) * deriv(x, xs, t).transpose();
+	x_new.col(i) = x - (state_transition_matrix * func(x, xs, actual_rho, t));
+	//calculate residuals
+	res.col(i) = x_new.col(i) - x;
+	//calculate rms
+	rms(i) = res.col(i).norm();
 
+	while (rms(i) > err) {
+		//calculate next iteration
+		state_transition_matrix = ((deriv(x, xs, t).transpose() * deriv(x, xs, t)).inverse()) * deriv(x, xs, t).transpose();
+		res.col(i) = (state_transition_matrix * func(x, xs, actual_rho, t));
+		//calculate residuals
+		x_new.col(i) = x + res.col(i);
+		//calculate rms
+		rms(i) = res.col(i).norm();
 
-			//calculate residuals
-			res.col(i) = x_new.col(i) - x;
-			//calculate rms
-			rms(i) = res.col(i).norm();
-			//cout << endl << "RMS" << endl;
-			//cout << rms(i);
-			//set x to xnew
-			x = x_new.col(i);
-			if (err > rms(i)) {
-				x = x_new.col(i);
-				break;
-			}
+		//set x to xnew
+		x = x_new.col(i);
+		i = i + 1;
+		if (i == int(steps)) {
+			break;
 		}
+		x_new.conservativeResize(x.rows(), i+1);
+		res.conservativeResize(x.rows(), i+1);
+		rms.conservativeResize(i+1);
+		rms(i) = rms(i - 1);
+	}
 }
 
 
